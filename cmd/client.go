@@ -3,10 +3,13 @@ package main
 import (
 	"bufio"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"os"
+
+	"render-box/shared"
 )
 
 func handleRead(conn net.Conn) {
@@ -40,6 +43,23 @@ func sendMessage(conn net.Conn, message string) error {
 	return nil
 }
 
+func sendJsonMessage(conn net.Conn, msg *shared.Message) error {
+	body, err := json.Marshal(*msg)
+	if err != nil {
+		return err
+	}
+	bodyLength := uint32(len(body))
+
+	header := make([]byte, 4)
+	binary.BigEndian.PutUint32(header, bodyLength)
+
+	_, err = conn.Write(append(header, body...))
+	if err != nil {
+		return fmt.Errorf("could not send message: %w", err)
+	}
+	return nil
+}
+
 func handleWrite(conn net.Conn) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -58,5 +78,9 @@ func main() {
 	log.Printf("New connection with %s\n", conn.RemoteAddr().String())
 
 	go handleRead(conn)
-	handleWrite(conn)
+	// handleWrite(conn)
+
+	task := shared.CreateTask{Name: "Peter", Age: 32}
+	msg := shared.Message{Type: shared.TaskCreate, Data: &task}
+	sendJsonMessage(conn, &msg)
 }

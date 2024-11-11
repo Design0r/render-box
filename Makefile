@@ -7,10 +7,10 @@ ifneq (,$(wildcard ./.env))
 endif
 
 client:
-	@go run ./client.go 
+	@go run ./cmd/client.go 
 
 server:
-	@go run ./server.go 
+	@go run ./cmd/server.go 
 
 migrationDir = ./migrations/
 
