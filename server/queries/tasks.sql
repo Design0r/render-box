@@ -26,3 +26,6 @@ WHERE id = ?;
 INSERT INTO tasks (priority, data, state, job_id)
 VALUES (?, ?, ?, ?)
 RETURNING *;
+
+-- name: GetTasks :many
+SELECT * from tasks;

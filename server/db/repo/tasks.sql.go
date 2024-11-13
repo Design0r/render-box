@@ -100,6 +100,41 @@ func (q *Queries) GetNextTask(ctx context.Context) (GetNextTaskRow, error) {
 	return i, err
 }
 
+const getTasks = `-- name: GetTasks :many
+SELECT id, priority, data, state, created_at, edited_at, job_id from tasks
+`
+
+func (q *Queries) GetTasks(ctx context.Context) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTasks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.Priority,
+			&i.Data,
+			&i.State,
+			&i.CreatedAt,
+			&i.EditedAt,
+			&i.JobID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateTaskState = `-- name: UpdateTaskState :exec
 UPDATE tasks
 SET state = 'progress', edited_at = CURRENT_TIMESTAMP

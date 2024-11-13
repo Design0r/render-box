@@ -1,20 +1,15 @@
 version: "2"
 sql: 
   - engine: "sqlite"
-    queries: "./queries"
-    schema: "./migrations"
+    queries: "./server/queries"
+    schema: "./server/migrations"
     gen:
       go:
         package: "repo"
-        out: "db/repo"
+        out: "server/db/repo"
         emit_json_tags: true
         emit_pointers_for_null_types: true
         overrides:
-          - db_type: "timestamptz"
-            go_type:
-              import: "time"
-              type: "Time"
-
           - db_type: "uuid"
             go_type:
               import: "github.com/google/uuid"

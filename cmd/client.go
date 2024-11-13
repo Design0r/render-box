@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 
+	"render-box/server/db/repo"
 	"render-box/shared"
 )
 
@@ -80,7 +81,7 @@ func main() {
 	go handleRead(conn)
 	// handleWrite(conn)
 
-	task := shared.CreateTask{Name: "Peter", Age: 32}
-	msg := shared.Message{Type: shared.TaskCreate, Data: &task}
+	task := repo.CreateTaskParams{Priority: int64(50), Data: "", State: "waiting", JobID: int64(1)}
+	msg := shared.Message{Type: shared.MSGTasksCreate, Data: &task}
 	sendJsonMessage(conn, &msg)
 }

@@ -1,6 +1,8 @@
 %:
 	@:
 
+.PHONY: server client
+
 ifneq (,$(wildcard ./.env))
     include .env
     export
@@ -12,7 +14,7 @@ client:
 server:
 	@go run ./cmd/server.go 
 
-migrationDir = ./migrations/
+migrationDir = ./server/migrations/
 
 dev:
 	air
