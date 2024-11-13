@@ -8,22 +8,22 @@ import (
 	"render-box/shared/db/repo"
 )
 
-func CreateTask(db *sql.DB, data *repo.CreateTaskParams) (*repo.Task, error) {
+func CreateJob(db *sql.DB, data *repo.CreateJobParams) (*repo.Job, error) {
 	r := repo.New(db)
 
-	task, err := r.CreateTask(context.Background(), *data)
+	job, err := r.CreateJob(context.Background(), *data)
 	if err != nil {
 		log.Printf("Failed to create task: %v", err)
 		return nil, err
 	}
 
-	return &task, nil
+	return &job, nil
 }
 
-func GetTasks(db *sql.DB) (*[]repo.Task, error) {
+func GetJobs(db *sql.DB) (*[]repo.Job, error) {
 	r := repo.New(db)
 
-	tasks, err := r.GetTasks(context.Background())
+	tasks, err := r.GetJobs(context.Background())
 	if err != nil {
 		log.Printf("Failed to get tasks: %v", err)
 		return nil, err

@@ -1,47 +1,64 @@
 package main
 
 import (
-	"bufio"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
-	"os"
 
-	"render-box/server/db/repo"
 	"render-box/shared"
+	"render-box/shared/db/repo"
 )
 
 func handleRead(conn net.Conn) {
-	buffer := make([]byte, 512)
-
+	header := make([]byte, 4)
 	for {
-		n, err := conn.Read(buffer)
+		bodySize, err := getBodySize(conn, header)
 		if err != nil {
-			log.Printf("ERROR: Could not read from connection: %s\n", err)
+			break
+		}
+		body, err := readBody(conn, bodySize)
+		if err != nil {
 			break
 		}
 
-		log.Printf("MESSAGE: %s\n", string(buffer[:n]))
+		log.Printf("MESSAGE: %v\n", body)
 	}
 }
 
-func sendMessage(conn net.Conn, message string) error {
-	// Step 1: Convert the message to bytes
-	body := []byte(message)
-	bodyLength := uint32(len(body))
-
-	// Step 2: Create a 4-byte header with the body length
-	header := make([]byte, 4)
-	binary.BigEndian.PutUint32(header, bodyLength)
-
-	// Step 3: Write the header followed by the body
-	_, err := conn.Write(append(header, body...))
+func getBodySize(conn net.Conn, header []byte) (uint32, error) {
+	_, err := io.ReadFull(conn, header)
 	if err != nil {
-		return fmt.Errorf("could not send message: %w", err)
+		if err == io.EOF {
+			log.Println("Connection closed by the server.")
+			return 0, err
+		}
+		log.Printf("ERROR: Could not read header: %s\n", err)
+		return 0, err
 	}
-	return nil
+
+	bodyLength := binary.BigEndian.Uint32(header)
+	return bodyLength, nil
+}
+
+func readBody(conn net.Conn, bodySize uint32) (*shared.Message, error) {
+	body := make([]byte, int(bodySize))
+	_, err := io.ReadFull(conn, body)
+	if err != nil {
+		log.Printf("ERROR: Could not read body: %s\n", err)
+		return nil, err
+	}
+
+	msg := shared.Message{}
+	err = json.Unmarshal(body, &msg)
+	if err != nil {
+		log.Printf("ERROR: Could not unmarshall json message: %s\n", err)
+		return nil, err
+	}
+
+	return &msg, nil
 }
 
 func sendJsonMessage(conn net.Conn, msg *shared.Message) error {
@@ -61,14 +78,6 @@ func sendJsonMessage(conn net.Conn, msg *shared.Message) error {
 	return nil
 }
 
-func handleWrite(conn net.Conn) {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		message := scanner.Text()
-		sendMessage(conn, message)
-	}
-}
-
 func main() {
 	Port := "8000"
 	conn, err := net.Dial("tcp", ":"+Port)
@@ -79,9 +88,8 @@ func main() {
 	log.Printf("New connection with %s\n", conn.RemoteAddr().String())
 
 	go handleRead(conn)
-	// handleWrite(conn)
 
-	task := repo.CreateTaskParams{Priority: int64(50), Data: "", State: "waiting", JobID: int64(1)}
-	msg := shared.Message{Type: shared.MSGTasksCreate, Data: &task}
+	task := repo.CreateJobParams{Name: "TestJob", Priority: int64(50), State: "waiting"}
+	msg := shared.Message{Type: shared.MSGJobsCreate, Data: &task}
 	sendJsonMessage(conn, &msg)
 }

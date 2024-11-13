@@ -10,8 +10,12 @@ import (
 type MsgType string
 
 const (
-	MSGSuccess     MsgType = "success"
-	MSGError       MsgType = "error"
+	MSGSuccess MsgType = "success"
+	MSGError   MsgType = "error"
+
+	MSGJobsCreate MsgType = "jobs.create"
+	MSGJobsAll    MsgType = "jobs.all"
+
 	MSGTasksCreate MsgType = "tasks.create"
 	MSGTasksAll    MsgType = "tasks.all"
 )
@@ -22,7 +26,7 @@ type Message struct {
 }
 
 func (self *Message) Send(conn net.Conn) error {
-	body, err := json.Marshal(self)
+	body, err := json.Marshal(*self)
 	if err != nil {
 		return err
 	}
@@ -31,9 +35,15 @@ func (self *Message) Send(conn net.Conn) error {
 	header := make([]byte, 4)
 	binary.BigEndian.PutUint32(header, bodyLength)
 
-	_, err = conn.Write(append(header, body...))
+	_, err = conn.Write(header)
 	if err != nil {
-		log.Printf("could not send message: %v", err)
+		log.Printf("ERROR: Failed to send header: %v", err)
+		return err
+	}
+
+	_, err = conn.Write(body)
+	if err != nil {
+		log.Printf("ERROR: Failed to send body: %v", err)
 		return err
 	}
 	return nil

@@ -11,9 +11,9 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"render-box/server/db/repo"
 	"render-box/server/service"
 	"render-box/shared"
+	"render-box/shared/db/repo"
 )
 
 type Server struct {
@@ -72,6 +72,7 @@ func readBody(conn net.Conn, bodySize uint32) (*shared.Message, error) {
 	var msg shared.Message
 	err = json.Unmarshal(body, &msg)
 	if err != nil {
+
 		log.Printf("ERROR: Could not unmarshall json message: %s\n", err)
 		return nil, err
 	}
@@ -94,14 +95,19 @@ func handleConnection(conn net.Conn, db *sql.DB) error {
 			break
 		}
 
-		var returnMsg shared.Message
 		returnData, err := handleMessage(db, body)
+		var returnMsg shared.Message
 		if err != nil {
 			returnMsg = shared.Message{Type: shared.MSGError, Data: nil}
 		} else {
 			returnMsg = shared.Message{Type: shared.MSGSuccess, Data: returnData}
 		}
-		returnMsg.Send(conn)
+		fmt.Printf("%+v\n", returnMsg)
+
+		if sendErr := returnMsg.Send(conn); sendErr != nil {
+			log.Printf("ERROR: Could not send response to client: %v\n", sendErr)
+			break
+		}
 
 	}
 
@@ -126,6 +132,21 @@ func handleMessage(db *sql.DB, message *shared.Message) (interface{}, error) {
 			return nil, err
 		}
 		return tasks, nil
+	case shared.MSGJobsCreate:
+		data := &repo.CreateJobParams{}
+		mapstructure.Decode(message.Data, data)
+		task, err := service.CreateJob(db, data)
+		if err != nil {
+			return nil, err
+		}
+		return task, nil
+	case shared.MSGJobsAll:
+		tasks, err := service.GetJobs(db)
+		if err != nil {
+			return nil, err
+		}
+		return tasks, nil
+
 	default:
 		return nil, fmt.Errorf("Invalid message type: %v", message.Type)
 	}
