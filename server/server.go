@@ -2,10 +2,7 @@ package server
 
 import (
 	"database/sql"
-	"encoding/binary"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 
@@ -42,55 +39,22 @@ func (self *Server) Run() {
 		}
 		log.Printf("New connection with %s\n", conn.RemoteAddr().String())
 
-		go handleConnection(conn, self.Db)
+		go handleConnection(&conn, self.Db)
 	}
 }
 
-func getBodySize(conn net.Conn, header []byte) (uint32, error) {
-	_, err := io.ReadFull(conn, header)
-	if err != nil {
-		if err == io.EOF {
-			log.Println("Connection closed by the server.")
-			return 0, err
-		}
-		log.Printf("ERROR: Could not read header: %s\n", err)
-		return 0, err
-	}
-
-	bodyLength := binary.BigEndian.Uint32(header)
-	return bodyLength, nil
-}
-
-func readBody(conn net.Conn, bodySize uint32) (*shared.Message, error) {
-	body := make([]byte, int(bodySize))
-	_, err := io.ReadFull(conn, body)
-	if err != nil {
-		log.Printf("ERROR: Could not read body: %s\n", err)
-		return nil, err
-	}
-
-	var msg shared.Message
-	err = json.Unmarshal(body, &msg)
-	if err != nil {
-
-		log.Printf("ERROR: Could not unmarshall json message: %s\n", err)
-		return nil, err
-	}
-
-	return &msg, nil
-}
-
-func handleConnection(conn net.Conn, db *sql.DB) error {
-	defer conn.Close()
+func handleConnection(conn *net.Conn, db *sql.DB) error {
+	c := *conn
+	defer c.Close()
 
 	var err error
 	header := make([]byte, 4)
 	for {
-		bodySize, err := getBodySize(conn, header)
+		bodySize, err := shared.GetBodySize(conn, header)
 		if err != nil {
 			break
 		}
-		body, err := readBody(conn, bodySize)
+		body, err := shared.ReadBody(conn, bodySize)
 		if err != nil {
 			break
 		}
@@ -111,7 +75,7 @@ func handleConnection(conn net.Conn, db *sql.DB) error {
 
 	}
 
-	log.Printf("Closed connection with %s\n", conn.RemoteAddr().String())
+	log.Printf("Closed connection with %s\n", c.RemoteAddr().String())
 	return err
 }
 
