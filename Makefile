@@ -8,8 +8,12 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
+
 client:
-	@go run ./cmd/client.go 
+	@go run ./cmd/client.go
+
+submit:
+	@go run ./cmd/submitter.go 
 
 server:
 	@go run ./cmd/server.go 
