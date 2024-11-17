@@ -6,11 +6,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"render-box/client"
+	"render-box/client/assets"
 )
 
 func HandleIndex(c echo.Context) error {
-	tmpl, err := template.ParseFS(client.TemplatesFS, "templates/index.html")
+	tmpl, err := template.ParseFS(assets.TemplatesFS, "templates/index.html")
 	if err != nil {
 		return fmt.Errorf("Coult not load template: %v", err)
 	}

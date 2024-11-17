@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"render-box/client"
+	"render-box/client/assets"
 )
 
 type Server struct {
@@ -32,7 +32,7 @@ func (self *Server) InitMiddleware() {
 	// 	),
 	// )
 
-	staticHandler := echo.WrapHandler(http.FileServer(http.FS(client.StaticFS)))
+	staticHandler := echo.WrapHandler(http.FileServer(http.FS(assets.StaticFS)))
 	self.router.GET("/static/*", staticHandler)
 	self.router.Use(middleware.Recover())
 }
