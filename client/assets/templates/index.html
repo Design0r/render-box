@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css"
+          rel="stylesheet"
+          type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.3"></script>
     <script src="https://unpkg.com/htmx-ext-ws@2.0.1/ws.js"></script>
-    <title>Hello</title>
+    <title>Render Box Monitor</title>
   </head>
-  <body>
-    <div hx-ext="ws" ws-connect="/ws">
-      <div id="notifications"></div>
-      <div id="chat_room">...</div>
-      <form id="form" ws-send>
-        <input name="chat_message">
-      </form>
-    </div>
+  <body class="space-y-5">
+    {{ template "header" }}
+    <div hx-ext="ws" ws-connect="/ws" class="bg-base-100">{{ template "tasks" . }}</div>
   </body>
 </html>

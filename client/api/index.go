@@ -1,24 +1,24 @@
 package api
 
 import (
-	"fmt"
-	"text/template"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
-
-	"render-box/client/assets"
 )
 
-func HandleIndex(c echo.Context) error {
-	tmpl, err := template.ParseFS(assets.TemplatesFS, "templates/index.html")
-	if err != nil {
-		return fmt.Errorf("Coult not load template: %v", err)
-	}
+type Task struct {
+	Name string
+}
 
-	err = tmpl.Execute(c.Response().Writer, nil)
-	if err != nil {
-		return fmt.Errorf("Could not render template: %v", err)
-	}
+type PageData struct {
+	Test  string
+	Tasks []Task
+}
+
+func HandleIndex(c echo.Context) error {
+	tasks := []Task{{Name: "Render 01"}, {Name: "Render 02"}}
+	ctx := PageData{Test: "Hello World", Tasks: tasks}
+	c.Render(http.StatusOK, "index.html", ctx)
 
 	return nil
 }

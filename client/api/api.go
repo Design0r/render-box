@@ -39,6 +39,7 @@ func (self *Server) InitMiddleware() {
 
 func (self *Server) InitRoutes(group *echo.Group) {
 	group.GET("", HandleIndex)
+	group.GET("/ws", WsHandler)
 }
 
 func (self *Server) Start(address string) error {
