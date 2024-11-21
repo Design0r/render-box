@@ -15,7 +15,10 @@
       </thead>
       <tbody>
         {{ range .Jobs }}
-        <tr class ="hover">
+        <tr ws-send
+            hx-trigger="click"
+            hx-vals='{"job_id": "{{.ID}}"}'
+            class="hover">
           <th>{{ .ID }}</th>
           <td>{{ .Priority }}</td>
           <td>{{ .State }}</td>

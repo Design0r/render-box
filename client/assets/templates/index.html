@@ -15,10 +15,16 @@
   <body class="space-y-5">
     {{ template "header" }}
     <div hx-ext="ws" ws-connect="/ws" class="bg-base-100">
-      <h1>Jobs</h1>
-      {{ template "jobs" . }}
-      <h1>Tasks</h1>
-      {{ template "tasks" . }}
+      <div class="p-5 grid grid-cols-2">
+        <div>
+          <h1 class="text-lg text-center">Jobs</h1>
+          {{ template "jobs" . }}
+        </div>
+        <div>
+          <h1 class="text-lg text-center">Tasks</h1>
+          {{ template "tasks" . }}
+        </div>
+      </div>
     </div>
   </body>
 </html>
