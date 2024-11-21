@@ -84,3 +84,28 @@ func ReadBody(conn *net.Conn, bodySize uint32) (*Message, error) {
 
 	return &msg, nil
 }
+
+func RecvMessage[T any](conn *net.Conn) (*Message, error) {
+	header := make([]byte, 4)
+	bodySize, err := GetBodySize(conn, header)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ReadBody(conn, bodySize)
+	if err != nil {
+		return nil, err
+	}
+
+	dataBytes, err := json.Marshal(body.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	var generic T
+	err = json.Unmarshal(dataBytes, &generic)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Message{Type: body.Type, Data: generic}, nil
+}

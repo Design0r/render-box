@@ -14,6 +14,11 @@
   </head>
   <body class="space-y-5">
     {{ template "header" }}
-    <div hx-ext="ws" ws-connect="/ws" class="bg-base-100">{{ template "tasks" . }}</div>
+    <div hx-ext="ws" ws-connect="/ws" class="bg-base-100">
+      <h1>Jobs</h1>
+      {{ template "jobs" . }}
+      <h1>Tasks</h1>
+      {{ template "tasks" . }}
+    </div>
   </body>
 </html>

@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"render-box/shared/db/repo"
 )
 
 type Task struct {
@@ -11,13 +13,12 @@ type Task struct {
 }
 
 type PageData struct {
-	Test  string
-	Tasks []Task
+	Tasks []repo.Task
+	Jobs  []repo.Job
 }
 
 func HandleIndex(c echo.Context) error {
-	tasks := []Task{{Name: "Render 01"}, {Name: "Render 02"}}
-	ctx := PageData{Test: "Hello World", Tasks: tasks}
+	ctx := PageData{Tasks: nil, Jobs: nil}
 	c.Render(http.StatusOK, "index.html", ctx)
 
 	return nil
