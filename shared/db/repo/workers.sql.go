@@ -42,6 +42,26 @@ func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (Wor
 	return i, err
 }
 
+const getWorkerByName = `-- name: GetWorkerByName :one
+SELECT id, name, state, metadata, created_at, edited_at, task_id FROM workers
+WHERE name = ?
+`
+
+func (q *Queries) GetWorkerByName(ctx context.Context, name string) (Worker, error) {
+	row := q.db.QueryRowContext(ctx, getWorkerByName, name)
+	var i Worker
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.State,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.TaskID,
+	)
+	return i, err
+}
+
 const getWorkers = `-- name: GetWorkers :many
 SELECT id, name, state, metadata, created_at, edited_at, task_id FROM workers
 `
@@ -75,4 +95,58 @@ func (q *Queries) GetWorkers(ctx context.Context) ([]Worker, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateWorkerState = `-- name: UpdateWorkerState :one
+UPDATE workers
+SET state = ?, edited_at = CURRENT_TIMESTAMP
+WHERE id = ?
+RETURNING id, name, state, metadata, created_at, edited_at, task_id
+`
+
+type UpdateWorkerStateParams struct {
+	State string `json:"state"`
+	ID    int64  `json:"id"`
+}
+
+func (q *Queries) UpdateWorkerState(ctx context.Context, arg UpdateWorkerStateParams) (Worker, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkerState, arg.State, arg.ID)
+	var i Worker
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.State,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.TaskID,
+	)
+	return i, err
+}
+
+const updateWorkerTask = `-- name: UpdateWorkerTask :one
+UPDATE workers
+SET task_id = ?, edited_at = CURRENT_TIMESTAMP
+WHERE id = ?
+RETURNING id, name, state, metadata, created_at, edited_at, task_id
+`
+
+type UpdateWorkerTaskParams struct {
+	TaskID *int64 `json:"task_id"`
+	ID     int64  `json:"id"`
+}
+
+func (q *Queries) UpdateWorkerTask(ctx context.Context, arg UpdateWorkerTaskParams) (Worker, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkerTask, arg.TaskID, arg.ID)
+	var i Worker
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.State,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.TaskID,
+	)
+	return i, err
 }

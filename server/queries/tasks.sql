@@ -1,5 +1,5 @@
 -- name: GetNextTask :one
-SELECT *
+SELECT t.*
 FROM tasks t
 JOIN jobs j ON t.job_id = j.id
 WHERE j.priority = (
@@ -17,10 +17,11 @@ AND t.state = 'waiting'
 ORDER BY t.created_at ASC
 LIMIT 1;
 
--- name: UpdateTaskState :exec
+-- name: UpdateTaskState :one
 UPDATE tasks
-SET state = 'progress', edited_at = CURRENT_TIMESTAMP
-WHERE id = ?;
+SET state = ?, edited_at = CURRENT_TIMESTAMP
+WHERE id = ?
+RETURNING *;
 
 -- name: CreateTask :one
 INSERT INTO tasks (priority, data, state, job_id)

@@ -43,11 +43,17 @@ func (self *Server) Run() {
 	}
 }
 
-func handleConnection(conn *net.Conn, db *sql.DB) error {
+type ConnState struct {
+	Worker *repo.Worker
+	Task   *repo.Task
+}
+
+func handleConnection(conn *net.Conn, db *sql.DB) {
 	c := *conn
 	defer c.Close()
 
-	var err error
+	state := &ConnState{}
+
 	header := make([]byte, 4)
 	for {
 		bodySize, err := shared.GetBodySize(conn, header)
@@ -59,14 +65,14 @@ func handleConnection(conn *net.Conn, db *sql.DB) error {
 			break
 		}
 
-		returnData, err := handleMessage(db, body)
+		returnData, err := handleMessage(db, body, state)
 		var returnMsg shared.Message
 		if err != nil {
 			returnMsg = shared.Message{Type: shared.MSGError, Data: nil}
 		} else {
 			returnMsg = shared.Message{Type: shared.MSGSuccess, Data: returnData}
 		}
-		fmt.Printf("%+v\n", returnMsg)
+		log.Printf("%+v\n", returnMsg)
 
 		if sendErr := returnMsg.Send(conn); sendErr != nil {
 			log.Printf("ERROR: Could not send response to client: %v\n", sendErr)
@@ -75,11 +81,21 @@ func handleConnection(conn *net.Conn, db *sql.DB) error {
 
 	}
 
+	if state.Worker != nil {
+		service.UpdateWorkerState(db, "offline", state.Worker.ID)
+	}
+	if state.Task != nil {
+		service.UpdateTaskState(db, "waiting", state.Task.ID)
+	}
+
 	log.Printf("Closed connection with %s\n", c.RemoteAddr().String())
-	return err
 }
 
-func handleMessage(db *sql.DB, message *shared.Message) (interface{}, error) {
+func handleMessage(
+	db *sql.DB,
+	message *shared.Message,
+	state *ConnState,
+) (interface{}, error) {
 	log.Printf("MESSAGE: %+v\n", message)
 	switch message.Type {
 	case shared.MSGTasksCreate:
@@ -110,6 +126,48 @@ func handleMessage(db *sql.DB, message *shared.Message) (interface{}, error) {
 			return nil, err
 		}
 		return tasks, nil
+	case shared.MSGWorkerCreate:
+		data := &repo.CreateWorkerParams{}
+		mapstructure.Decode(message.Data, data)
+		worker, err := service.CreateWorker(db, data)
+		if err != nil {
+			return nil, err
+		}
+		return worker, nil
+	case shared.MSGWorkerAll:
+		worker, err := service.GetWorkers(db)
+		if err != nil {
+			return nil, err
+		}
+		return worker, nil
+	case shared.MSGWorkerRegister:
+		name := (message.Data).(string)
+		worker, err := service.RegisterWorker(db, name)
+		if err != nil {
+			return nil, err
+		}
+		state.Worker = worker
+		return worker, err
+
+	case shared.MSGTasksNext:
+		task, err := service.GetNextTask(db)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = service.UpdateWorkerState(db, "working", state.Worker.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		worker, err := service.UpdateWorkerTask(db, state.Worker.ID, task.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		state.Worker = worker
+		state.Task = task
+		return task, err
 
 	default:
 		return nil, fmt.Errorf("Invalid message type: %v", message.Type)

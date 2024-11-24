@@ -12,6 +12,9 @@ endif
 client:
 	@go run ./cmd/client.go
 
+worker:
+	@go run ./cmd/worker.go
+
 submit:
 	@go run ./cmd/submitter.go 
 

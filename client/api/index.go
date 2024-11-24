@@ -13,12 +13,13 @@ type Task struct {
 }
 
 type PageData struct {
-	Tasks []repo.Task
-	Jobs  []repo.Job
+	Tasks   []repo.Task
+	Jobs    []repo.Job
+	Workers []repo.Worker
 }
 
 func HandleIndex(c echo.Context) error {
-	ctx := PageData{Tasks: nil, Jobs: nil}
+	ctx := PageData{Tasks: nil, Jobs: nil, Workers: nil}
 	c.Render(http.StatusOK, "index.html", ctx)
 
 	return nil

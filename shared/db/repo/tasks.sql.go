@@ -7,7 +7,6 @@ package repo
 
 import (
 	"context"
-	"time"
 )
 
 const createTask = `-- name: CreateTask :one
@@ -44,7 +43,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 }
 
 const getNextTask = `-- name: GetNextTask :one
-SELECT t.id, t.priority, data, t.state, t.created_at, t.edited_at, job_id, j.id, name, j.priority, j.state, j.created_at, j.edited_at
+SELECT t.id, t.priority, t.data, t.state, t.created_at, t.edited_at, t.job_id
 FROM tasks t
 JOIN jobs j ON t.job_id = j.id
 WHERE j.priority = (
@@ -63,25 +62,9 @@ ORDER BY t.created_at ASC
 LIMIT 1
 `
 
-type GetNextTaskRow struct {
-	ID          int64     `json:"id"`
-	Priority    int64     `json:"priority"`
-	Data        string    `json:"data"`
-	State       string    `json:"state"`
-	CreatedAt   time.Time `json:"created_at"`
-	EditedAt    time.Time `json:"edited_at"`
-	JobID       int64     `json:"job_id"`
-	ID_2        int64     `json:"id_2"`
-	Name        string    `json:"name"`
-	Priority_2  int64     `json:"priority_2"`
-	State_2     string    `json:"state_2"`
-	CreatedAt_2 time.Time `json:"created_at_2"`
-	EditedAt_2  time.Time `json:"edited_at_2"`
-}
-
-func (q *Queries) GetNextTask(ctx context.Context) (GetNextTaskRow, error) {
+func (q *Queries) GetNextTask(ctx context.Context) (Task, error) {
 	row := q.db.QueryRowContext(ctx, getNextTask)
-	var i GetNextTaskRow
+	var i Task
 	err := row.Scan(
 		&i.ID,
 		&i.Priority,
@@ -90,12 +73,6 @@ func (q *Queries) GetNextTask(ctx context.Context) (GetNextTaskRow, error) {
 		&i.CreatedAt,
 		&i.EditedAt,
 		&i.JobID,
-		&i.ID_2,
-		&i.Name,
-		&i.Priority_2,
-		&i.State_2,
-		&i.CreatedAt_2,
-		&i.EditedAt_2,
 	)
 	return i, err
 }
@@ -135,13 +112,29 @@ func (q *Queries) GetTasks(ctx context.Context) ([]Task, error) {
 	return items, nil
 }
 
-const updateTaskState = `-- name: UpdateTaskState :exec
+const updateTaskState = `-- name: UpdateTaskState :one
 UPDATE tasks
-SET state = 'progress', edited_at = CURRENT_TIMESTAMP
+SET state = ?, edited_at = CURRENT_TIMESTAMP
 WHERE id = ?
+RETURNING id, priority, data, state, created_at, edited_at, job_id
 `
 
-func (q *Queries) UpdateTaskState(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, updateTaskState, id)
-	return err
+type UpdateTaskStateParams struct {
+	State string `json:"state"`
+	ID    int64  `json:"id"`
+}
+
+func (q *Queries) UpdateTaskState(ctx context.Context, arg UpdateTaskStateParams) (Task, error) {
+	row := q.db.QueryRowContext(ctx, updateTaskState, arg.State, arg.ID)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Priority,
+		&i.Data,
+		&i.State,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.JobID,
+	)
+	return i, err
 }

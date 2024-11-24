@@ -63,6 +63,15 @@ func fetchPageData(conn *net.Conn, jobId int64) (*PageData, error) {
 	}
 	jobs := ((*response).Data).([]repo.Job)
 
+	workerMsg := shared.Message{Type: shared.MSGWorkerAll, Data: nil}
+	workerMsg.Send(conn)
+	response, err = shared.RecvMessage[[]repo.Worker](conn)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	worker := ((*response).Data).([]repo.Worker)
+
 	var activeTasks []repo.Task
 	for _, t := range tasks {
 		if t.JobID != jobId {
@@ -71,7 +80,7 @@ func fetchPageData(conn *net.Conn, jobId int64) (*PageData, error) {
 		activeTasks = append(activeTasks, t)
 	}
 
-	return &PageData{Tasks: activeTasks, Jobs: jobs}, nil
+	return &PageData{Tasks: activeTasks, Jobs: jobs, Workers: worker}, nil
 }
 
 func updatePage(c echo.Context, ws *websocket.Conn, conn *net.Conn, currentJobId int64) error {
