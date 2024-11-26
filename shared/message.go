@@ -1,11 +1,14 @@
 package shared
 
 import (
+	"database/sql"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"render-box/shared"
 )
 
 type MsgType string
@@ -129,4 +132,36 @@ func RecvMessage[T any](conn *net.Conn) (*Message, error) {
 	}
 
 	return &Message{Type: body.Type, Data: *generic}, nil
+}
+
+type MessageHandler = func(db *sql.DB, message *shared.Message, state *ConnState) (interface{}, error)
+type MessageRouter struct {
+	routes map[string]MessageHandler
+}
+
+func (self *MessageRouter) IncludeRouter(router *MessageRouter) {
+	for k, v := range router.routes {
+		if _, exists := self.routes[k]; !exists {
+			log.Printf("Failed to add route: %v, route already exists", k)
+			continue
+		}
+		self.routes[k] = v
+	}
+}
+
+func (self *MessageRouter) Register(path string, handler MessageHandler) {
+	if _, exists := self.routes[path]; !exists {
+		log.Printf("Failed to add route: %v, route already exists", path)
+		return
+	}
+	self.routes[path] = handler
+}
+
+func (self *MessageRouter) Handle(db *sql.DB, message *shared.Message, state *ConnState) (interface{}, error) {
+	handler, exists := self.routes[message.Type]
+	if !exists {
+		return nil, fmt.Errorf("Failed to add route: %v, route already exists", message.Type)
+	}
+
+	return handler(db, message, state)
 }

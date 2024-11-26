@@ -3,7 +3,13 @@ package shared
 import (
 	"log"
 	"net"
+	"render-box/shared/db/repo"
 )
+
+type ConnState struct {
+	Worker *repo.Worker
+	Task   *repo.Task
+}
 
 type TCPListener struct {
 	Port string

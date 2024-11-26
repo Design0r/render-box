@@ -41,16 +41,11 @@ func (self *Server) Run() {
 	}
 }
 
-type ConnState struct {
-	Worker *repo.Worker
-	Task   *repo.Task
-}
-
 func handleConnection(conn *net.Conn, db *sql.DB) {
 	c := *conn
 	defer c.Close()
 
-	state := &ConnState{}
+	state := &shared.ConnState{}
 
 	header := make([]byte, 4)
 	for {
