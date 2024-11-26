@@ -6,8 +6,6 @@ import (
 	"log"
 	"net"
 
-	"github.com/mitchellh/mapstructure"
-
 	"render-box/server/service"
 	"render-box/shared"
 	"render-box/shared/db/repo"
@@ -72,7 +70,7 @@ func handleConnection(conn *net.Conn, db *sql.DB) {
 		} else {
 			returnMsg = shared.Message{Type: shared.MSGSuccess, Data: returnData}
 		}
-		log.Printf("%+v\n", returnMsg)
+		log.Printf("Return Data %+v\n", returnMsg.Data)
 
 		if sendErr := returnMsg.Send(conn); sendErr != nil {
 			log.Printf("ERROR: Could not send response to client: %v\n", sendErr)
@@ -99,9 +97,13 @@ func handleMessage(
 	log.Printf("MESSAGE: %+v\n", message)
 	switch message.Type {
 	case shared.MSGTasksCreate:
-		data := &repo.CreateTaskParams{}
-		mapstructure.Decode(message.Data, data)
+		data, err := shared.UnmarshallBody[repo.CreateTaskParams](message.Data)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("Data: -> %+v", data)
 		task, err := service.CreateTask(db, data)
+		log.Printf("Task: -> %+v", task)
 		if err != nil {
 			return nil, err
 		}
@@ -113,8 +115,10 @@ func handleMessage(
 		}
 		return tasks, nil
 	case shared.MSGJobsCreate:
-		data := &repo.CreateJobParams{}
-		mapstructure.Decode(message.Data, data)
+		data, err := shared.UnmarshallBody[repo.CreateJobParams](message.Data)
+		if err != nil {
+			return nil, err
+		}
 		task, err := service.CreateJob(db, data)
 		if err != nil {
 			return nil, err
@@ -127,8 +131,10 @@ func handleMessage(
 		}
 		return tasks, nil
 	case shared.MSGWorkerCreate:
-		data := &repo.CreateWorkerParams{}
-		mapstructure.Decode(message.Data, data)
+		data, err := shared.UnmarshallBody[repo.CreateWorkerParams](message.Data)
+		if err != nil {
+			return nil, err
+		}
 		worker, err := service.CreateWorker(db, data)
 		if err != nil {
 			return nil, err

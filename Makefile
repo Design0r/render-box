@@ -36,7 +36,7 @@ migrate:
 	@goose -dir=${migrationDir} create ${args}
 
 up:
-	GOOSE_DRIVER=sqlite GOOSE_DBSTRING=render_box.db goose -dir=${migrationDir} up
+	@goose -dir=${migrationDir} sqlite render_box.db up
 
 down:
-	@GOOSE_DRIVER=sqlite GOOSE_DBSTRING=render_box.db goose -dir=${migrationDir} down
+	@goose -dir=${migrationDir} sqlite render_box.db down

@@ -77,7 +77,7 @@ func GetBodySize(conn *net.Conn, header []byte) (uint32, error) {
 	return bodyLength, nil
 }
 
-func ReadBody(conn *net.Conn, bodySize uint32) (*RawMessage, error) {
+func ReadBody(conn *net.Conn, bodySize uint32) (*Message, error) {
 	body := make([]byte, int(bodySize))
 	_, err := io.ReadFull(*conn, body)
 	if err != nil {
@@ -85,7 +85,7 @@ func ReadBody(conn *net.Conn, bodySize uint32) (*RawMessage, error) {
 		return nil, err
 	}
 
-	msg := RawMessage{}
+	msg := Message{}
 	err = json.Unmarshal(body, &msg)
 	if err != nil {
 		log.Printf("ERROR: Could not unmarshall json message: %s\n", err)
@@ -93,6 +93,23 @@ func ReadBody(conn *net.Conn, bodySize uint32) (*RawMessage, error) {
 	}
 
 	return &msg, nil
+}
+
+func UnmarshallBody[T any](body interface{}) (*T, error) {
+
+	bodyData, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	var generic T
+	err = json.Unmarshal(bodyData, &generic)
+	if err != nil {
+		return nil, err
+	}
+
+	return &generic, nil
+
 }
 
 func RecvMessage[T any](conn *net.Conn) (*Message, error) {
@@ -106,14 +123,10 @@ func RecvMessage[T any](conn *net.Conn) (*Message, error) {
 		return nil, err
 	}
 
-	log.Printf(">>> Body: %+v", body)
-
-	var generic T
-	err = json.Unmarshal(body.Data, &generic)
+	generic, err := UnmarshallBody[T](body.Data)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf(">>> Final: %+v", generic)
 
-	return &Message{Type: body.Type, Data: generic}, nil
+	return &Message{Type: body.Type, Data: *generic}, nil
 }
