@@ -7,6 +7,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"render-box/server"
+	"render-box/server/routes"
+	"render-box/shared"
 )
 
 func main() {
@@ -16,7 +18,12 @@ func main() {
 	}
 	defer db.Close()
 
+	router := shared.NewMessageRouter()
+	router.IncludeRouter(routes.InitJobRouter())
+	router.IncludeRouter(routes.InitWorkerRouter())
+	router.IncludeRouter(routes.InitTaskRouter())
+
 	Port := "8000"
-	server := server.NewServer(Port, db)
+	server := server.NewServer(Port, db, router)
 	server.Run()
 }

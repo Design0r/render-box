@@ -2,23 +2,22 @@ package server
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net"
 
 	"render-box/server/service"
 	"render-box/shared"
-	"render-box/shared/db/repo"
 )
 
 type Server struct {
 	Addr     string
 	Listener *net.Listener
 	Db       *sql.DB
+	Router   *shared.MessageRouter
 }
 
-func NewServer(port string, db *sql.DB) *Server {
-	return &Server{Addr: (":" + port), Listener: nil, Db: db}
+func NewServer(port string, db *sql.DB, router *shared.MessageRouter) *Server {
+	return &Server{Addr: (":" + port), Listener: nil, Db: db, Router: router}
 }
 
 func (self *Server) Run() {
@@ -37,11 +36,11 @@ func (self *Server) Run() {
 		}
 		log.Printf("New connection with %s\n", conn.RemoteAddr().String())
 
-		go handleConnection(&conn, self.Db)
+		go self.handleConnection(&conn)
 	}
 }
 
-func handleConnection(conn *net.Conn, db *sql.DB) {
+func (self *Server) handleConnection(conn *net.Conn) {
 	c := *conn
 	defer c.Close()
 
@@ -58,7 +57,8 @@ func handleConnection(conn *net.Conn, db *sql.DB) {
 			break
 		}
 
-		returnData, err := handleMessage(db, body, state)
+		returnData, err := self.Router.Handle(self.Db, body, state)
+
 		var returnMsg shared.Message
 		if err != nil {
 			returnMsg = shared.Message{Type: shared.MSGError, Data: nil}
@@ -75,102 +75,11 @@ func handleConnection(conn *net.Conn, db *sql.DB) {
 	}
 
 	if state.Worker != nil {
-		service.UpdateWorkerState(db, "offline", state.Worker.ID)
+		service.UpdateWorkerState(self.Db, "offline", state.Worker.ID)
 	}
 	if state.Task != nil {
-		service.UpdateTaskState(db, "waiting", state.Task.ID)
+		service.UpdateTaskState(self.Db, "waiting", state.Task.ID)
 	}
 
 	log.Printf("Closed connection with %s\n", c.RemoteAddr().String())
-}
-
-func handleMessage(
-	db *sql.DB,
-	message *shared.Message,
-	state *ConnState,
-) (interface{}, error) {
-	log.Printf("MESSAGE: %+v\n", message)
-	switch message.Type {
-	case shared.MSGTasksCreate:
-		data, err := shared.UnmarshallBody[repo.CreateTaskParams](message.Data)
-		if err != nil {
-			return nil, err
-		}
-		log.Printf("Data: -> %+v", data)
-		task, err := service.CreateTask(db, data)
-		log.Printf("Task: -> %+v", task)
-		if err != nil {
-			return nil, err
-		}
-		return task, nil
-	case shared.MSGTasksAll:
-		tasks, err := service.GetTasks(db)
-		if err != nil {
-			return nil, err
-		}
-		return tasks, nil
-	case shared.MSGJobsCreate:
-		data, err := shared.UnmarshallBody[repo.CreateJobParams](message.Data)
-		if err != nil {
-			return nil, err
-		}
-		task, err := service.CreateJob(db, data)
-		if err != nil {
-			return nil, err
-		}
-		return task, nil
-	case shared.MSGJobsAll:
-		tasks, err := service.GetJobs(db)
-		if err != nil {
-			return nil, err
-		}
-		return tasks, nil
-	case shared.MSGWorkerCreate:
-		data, err := shared.UnmarshallBody[repo.CreateWorkerParams](message.Data)
-		if err != nil {
-			return nil, err
-		}
-		worker, err := service.CreateWorker(db, data)
-		if err != nil {
-			return nil, err
-		}
-		return worker, nil
-	case shared.MSGWorkerAll:
-		worker, err := service.GetWorkers(db)
-		if err != nil {
-			return nil, err
-		}
-		return worker, nil
-	case shared.MSGWorkerRegister:
-		name := (message.Data).(string)
-		worker, err := service.RegisterWorker(db, name)
-		if err != nil {
-			return nil, err
-		}
-		state.Worker = worker
-		return worker, err
-
-	case shared.MSGTasksNext:
-		task, err := service.GetNextTask(db)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = service.UpdateWorkerState(db, "working", state.Worker.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		worker, err := service.UpdateWorkerTask(db, state.Worker.ID, task.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		state.Worker = worker
-		state.Task = task
-		return task, err
-
-	default:
-		return nil, fmt.Errorf("Invalid message type: %v", message.Type)
-	}
 }

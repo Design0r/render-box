@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"render-box/shared"
 )
 
 type MsgType string
@@ -99,7 +98,6 @@ func ReadBody(conn *net.Conn, bodySize uint32) (*Message, error) {
 }
 
 func UnmarshallBody[T any](body interface{}) (*T, error) {
-
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -112,7 +110,6 @@ func UnmarshallBody[T any](body interface{}) (*T, error) {
 	}
 
 	return &generic, nil
-
 }
 
 func RecvMessage[T any](conn *net.Conn) (*Message, error) {
@@ -134,31 +131,42 @@ func RecvMessage[T any](conn *net.Conn) (*Message, error) {
 	return &Message{Type: body.Type, Data: *generic}, nil
 }
 
-type MessageHandler = func(db *sql.DB, message *shared.Message, state *ConnState) (interface{}, error)
-type MessageRouter struct {
-	routes map[string]MessageHandler
+type (
+	MessageHandler = func(db *sql.DB, message *Message, state *ConnState) (interface{}, error)
+	MessageRouter  struct {
+		Routes map[string]MessageHandler
+	}
+)
+
+func NewMessageRouter() *MessageRouter {
+	m := map[string]MessageHandler{}
+	return &MessageRouter{Routes: m}
 }
 
 func (self *MessageRouter) IncludeRouter(router *MessageRouter) {
-	for k, v := range router.routes {
-		if _, exists := self.routes[k]; !exists {
-			log.Printf("Failed to add route: %v, route already exists", k)
+	for k, v := range router.Routes {
+		if _, exists := self.Routes[k]; exists {
+			log.Printf("Failed to include route: %v, route already exists", k)
 			continue
 		}
-		self.routes[k] = v
+		self.Routes[k] = v
 	}
 }
 
 func (self *MessageRouter) Register(path string, handler MessageHandler) {
-	if _, exists := self.routes[path]; !exists {
-		log.Printf("Failed to add route: %v, route already exists", path)
+	if _, exists := self.Routes[path]; exists {
+		log.Printf("Failed to register route: %v, route already exists", path)
 		return
 	}
-	self.routes[path] = handler
+	self.Routes[path] = handler
 }
 
-func (self *MessageRouter) Handle(db *sql.DB, message *shared.Message, state *ConnState) (interface{}, error) {
-	handler, exists := self.routes[message.Type]
+func (self *MessageRouter) Handle(
+	db *sql.DB,
+	message *Message,
+	state *ConnState,
+) (interface{}, error) {
+	handler, exists := self.Routes[string(message.Type)]
 	if !exists {
 		return nil, fmt.Errorf("Failed to add route: %v, route already exists", message.Type)
 	}
