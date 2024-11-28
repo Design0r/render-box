@@ -16,17 +16,17 @@
       </thead>
       <tbody>
         {{ range .Workers }}
-        <tr class ="hover">
-          <th>{{ .ID }}</th>
-          <td>{{ .Name }}</td>
-          <td>{{ .State }}</td>
-          <td>{{ .TaskID }}</td>
-          <td>{{ .CreatedAt }}</td>
-          <td>{{ .EditedAt }}</td>
-        </tr>
-        {{ end }}
-      </tbody>
-    </table>
-  </div>
+      <tr {{ if eq .State "working" }} class="hover text-green-500"{{ else if eq .State "waiting" }} class="hover text-white"{{ else }}  class="hover" {{ end }}>
+        <th>{{ .ID }}</th>
+        <td>{{ .Name }}</td>
+        <td>{{ .State }}</td>
+        <td>{{ .TaskID }}</td>
+        <td>{{ .CreatedAt }}</td>
+        <td>{{ .EditedAt }}</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
 </div>
 {{ end }}

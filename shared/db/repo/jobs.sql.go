@@ -68,3 +68,47 @@ func (q *Queries) GetJobs(ctx context.Context) ([]Job, error) {
 	}
 	return items, nil
 }
+
+const updateCompletedJob = `-- name: UpdateCompletedJob :one
+UPDATE jobs
+SET state = 'completed', edited_at = CURRENT_TIMESTAMP
+WHERE id = (
+    SELECT job_id FROM tasks t WHERE t.id = ?
+)
+AND NOT EXISTS (
+    SELECT 1 FROM tasks
+    WHERE job_id = jobs.id
+      AND state = 'waiting'
+)
+RETURNING id, name, priority, state, created_at, edited_at
+`
+
+func (q *Queries) UpdateCompletedJob(ctx context.Context, id int64) (Job, error) {
+	row := q.db.QueryRowContext(ctx, updateCompletedJob, id)
+	var i Job
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Priority,
+		&i.State,
+		&i.CreatedAt,
+		&i.EditedAt,
+	)
+	return i, err
+}
+
+const updateJobState = `-- name: UpdateJobState :exec
+UPDATE jobs
+SET state = ?, edited_at = CURRENT_TIMESTAMP
+WHERE id = ?
+`
+
+type UpdateJobStateParams struct {
+	State string `json:"state"`
+	ID    int64  `json:"id"`
+}
+
+func (q *Queries) UpdateJobState(ctx context.Context, arg UpdateJobStateParams) error {
+	_, err := q.db.ExecContext(ctx, updateJobState, arg.State, arg.ID)
+	return err
+}

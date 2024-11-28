@@ -61,6 +61,10 @@ func NextTask(
 		workerState = "waiting"
 	} else {
 		workerTaskId = &task.ID
+		err := service.UpdateJobState(db, "progress", task.JobID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	_, err := service.UpdateWorkerState(db, workerState, state.Worker.ID)
@@ -92,6 +96,12 @@ func CompleteTask(
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = service.UpdateCompletedJob(db, task.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	state.Task = task
 	return task, nil
 }

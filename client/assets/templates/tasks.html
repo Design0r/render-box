@@ -3,7 +3,7 @@
      id="tasks"
      class="container shadow-xl rounded-2xl p-3 m-auto">
   <div class="justify-center overflow-x-auto">
-    <table class="table table-zebra">
+    <table class="table">
       <thead>
         <tr>
           <th>ID</th>
@@ -16,17 +16,17 @@
       </thead>
       <tbody>
         {{ range .Tasks }}
-        <tr class ="hover">
-          <th>{{ .ID }}</th>
-          <td>{{ .Priority }}</td>
-          <td>{{ .State }}</td>
-          <td>{{ .CreatedAt }}</td>
-          <td>{{ .EditedAt }}</td>
-          <td>{{ .JobID }}</td>
-        </tr>
-        {{ end }}
-      </tbody>
-    </table>
-  </div>
+      <tr {{ if eq .State "progress" }} class="hover text-green-500" {{ else if eq .State "completed" }} class="hover text-blue-500" {{ else }}  class="hover" {{ end }}>
+        <th>{{ .ID }}</th>
+        <td>{{ .Priority }}</td>
+        <td>{{ .State }}</td>
+        <td>{{ .CreatedAt }}</td>
+        <td>{{ .EditedAt }}</td>
+        <td>{{ .JobID }}</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
 </div>
 {{ end }}

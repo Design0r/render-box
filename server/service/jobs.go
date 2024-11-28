@@ -31,3 +31,28 @@ func GetJobs(db *sql.DB) (*[]repo.Job, error) {
 
 	return &tasks, nil
 }
+
+func UpdateCompletedJob(db *sql.DB, taskId int64) (*repo.Job, error) {
+	r := repo.New(db)
+
+	job, err := r.UpdateCompletedJob(context.Background(), taskId)
+	if err != nil {
+		log.Printf("Failed to get tasks: %v", err)
+		return nil, err
+	}
+
+	return &job, nil
+}
+
+func UpdateJobState(db *sql.DB, state string, jobId int64) error {
+	r := repo.New(db)
+
+	data := repo.UpdateJobStateParams{State: state, ID: jobId}
+	err := r.UpdateJobState(context.Background(), data)
+	if err != nil {
+		log.Printf("Failed to get tasks: %v", err)
+		return err
+	}
+
+	return nil
+}

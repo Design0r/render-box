@@ -15,19 +15,16 @@
       </thead>
       <tbody>
         {{ range .Jobs }}
-        <tr ws-send
-            hx-trigger="click"
-            hx-vals='{"job_id": "{{.ID}}"}'
-            class="hover">
-          <th>{{ .ID }}</th>
-          <td>{{ .Priority }}</td>
-          <td>{{ .State }}</td>
-          <td>{{ .CreatedAt }}</td>
-          <td>{{ .EditedAt }}</td>
-        </tr>
-        {{ end }}
-      </tbody>
-    </table>
-  </div>
+      <tr ws-send hx-trigger="click" hx-vals='{"job_id": "{{.ID}}"}' {{ if eq .State "progress" }} class="hover text-green-500" {{ else if eq .State "completed" }} class="hover text-blue-500" {{ else }}  class="hover" {{ end }}>
+        <th>{{ .ID }}</th>
+        <td>{{ .Priority }}</td>
+        <td>{{ .State }}</td>
+        <td>{{ .CreatedAt }}</td>
+        <td>{{ .EditedAt }}</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
 </div>
 {{ end }}
