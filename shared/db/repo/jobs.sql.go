@@ -69,6 +69,21 @@ func (q *Queries) GetJobs(ctx context.Context) ([]Job, error) {
 	return items, nil
 }
 
+const restoreJobState = `-- name: RestoreJobState :exec
+UPDATE jobs
+SET state = 'waiting', edited_at = CURRENT_TIMESTAMP
+WHERE jobs.id = ?
+AND (SELECT COUNT(*) FROM tasks t 
+      WHERE t.job_id = jobs.id 
+      AND t.state in ('progress', 'waiting')
+    ) > 0
+`
+
+func (q *Queries) RestoreJobState(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, restoreJobState, id)
+	return err
+}
+
 const updateCompletedJob = `-- name: UpdateCompletedJob :one
 UPDATE jobs
 SET state = 'completed', edited_at = CURRENT_TIMESTAMP
@@ -100,7 +115,7 @@ func (q *Queries) UpdateCompletedJob(ctx context.Context, id int64) (Job, error)
 const updateJobState = `-- name: UpdateJobState :exec
 UPDATE jobs
 SET state = ?, edited_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE jobs.id = ?
 `
 
 type UpdateJobStateParams struct {

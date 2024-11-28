@@ -23,4 +23,13 @@ RETURNING *;
 -- name: UpdateJobState :exec
 UPDATE jobs
 SET state = ?, edited_at = CURRENT_TIMESTAMP
-WHERE id = ?;
+WHERE jobs.id = ?;
+
+-- name: RestoreJobState :exec
+UPDATE jobs
+SET state = 'waiting', edited_at = CURRENT_TIMESTAMP
+WHERE jobs.id = ?
+AND (SELECT COUNT(*) FROM tasks t 
+      WHERE t.job_id = jobs.id 
+      AND t.state in ('progress', 'waiting')
+    ) > 0;

@@ -80,6 +80,7 @@ func (self *Server) handleConnection(conn *net.Conn) {
 	}
 	if state.Task != nil {
 		service.UpdateTaskState(self.Db, "waiting", state.Task.ID)
+		service.RestoreJobState(self.Db, state.Task.JobID)
 	}
 
 	log.Printf("Closed connection with %s\n", c.RemoteAddr().String())

@@ -56,3 +56,15 @@ func UpdateJobState(db *sql.DB, state string, jobId int64) error {
 
 	return nil
 }
+
+func RestoreJobState(db *sql.DB, jobId int64) error {
+	r := repo.New(db)
+
+	err := r.RestoreJobState(context.Background(), jobId)
+	if err != nil {
+		log.Printf("Failed to get tasks: %v", err)
+		return err
+	}
+
+	return nil
+}

@@ -2,8 +2,9 @@ package main
 
 import (
 	"log"
-	"os"
 	"time"
+
+	"github.com/google/uuid"
 
 	"render-box/shared"
 	"render-box/shared/db/repo"
@@ -17,7 +18,9 @@ func main() {
 	}
 	defer (*conn).Close()
 
-	name, err := os.Hostname()
+	// name, err := os.Hostname()
+	randName, err := uuid.NewRandom()
+	name := randName.String()
 	if err != nil {
 		log.Fatal(err)
 	}
