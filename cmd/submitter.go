@@ -51,6 +51,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer (*conn).Close()
+
 	job, err := createJob(conn)
 	if err != nil {
 		return

@@ -121,6 +121,10 @@ func WsHandler(c echo.Context) error {
 
 	listener := shared.NewTcpListener("8000")
 	conn, err := listener.Run()
+	defer (*conn).Close()
+	if err != nil {
+		return err
+	}
 
 	for {
 		select {

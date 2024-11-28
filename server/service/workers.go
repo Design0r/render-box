@@ -45,10 +45,10 @@ func UpdateWorkerState(db *sql.DB, state string, workerId int64) (*repo.Worker, 
 	return &worker, err
 }
 
-func UpdateWorkerTask(db *sql.DB, workerId int64, taskId int64) (*repo.Worker, error) {
+func UpdateWorkerTask(db *sql.DB, workerId int64, taskId *int64) (*repo.Worker, error) {
 	r := repo.New(db)
 
-	data := repo.UpdateWorkerTaskParams{ID: workerId, TaskID: &taskId}
+	data := repo.UpdateWorkerTaskParams{ID: workerId, TaskID: taskId}
 	worker, err := r.UpdateWorkerTask(context.Background(), data)
 	if err != nil {
 		log.Printf("Failed to update worker task: %v", err)

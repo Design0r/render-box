@@ -19,9 +19,10 @@ const (
 	MSGJobsCreate MsgType = "jobs.create"
 	MSGJobsAll    MsgType = "jobs.all"
 
-	MSGTasksNext   MsgType = "tasks.next"
-	MSGTasksCreate MsgType = "tasks.create"
-	MSGTasksAll    MsgType = "tasks.all"
+	MSGTasksNext     MsgType = "tasks.next"
+	MSGTasksCreate   MsgType = "tasks.create"
+	MSGTasksAll      MsgType = "tasks.all"
+	MSGTasksComplete MsgType = "tasks.complete"
 
 	MSGWorkerRegister MsgType = "worker.register"
 	MSGWorkerCreate   MsgType = "worker.create"

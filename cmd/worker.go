@@ -15,6 +15,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer (*conn).Close()
+
 	name, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err)
@@ -30,6 +32,7 @@ func main() {
 	}
 
 	msg = shared.Message{Type: shared.MSGTasksNext, Data: nil}
+	complete := shared.Message{Type: shared.MSGTasksComplete, Data: nil}
 	for {
 		msg.Send(conn)
 		response, err := shared.RecvMessage[repo.Task](conn)
@@ -37,9 +40,21 @@ func main() {
 			log.Printf("Failed getting task: %v", err)
 			break
 		}
+		if response.Type == shared.MSGError {
+			log.Printf("No Task: %v", err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
 
 		task := (response.Data).(repo.Task)
 		log.Printf("Got Task: %+v", task)
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 5)
+
+		complete.Send(conn)
+		response, err = shared.RecvMessage[repo.Task](conn)
+		if err != nil {
+			log.Printf("Failed completing task: %v", err)
+			break
+		}
 	}
 }

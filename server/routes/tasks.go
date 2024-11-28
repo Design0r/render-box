@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"log"
 
 	"render-box/server/service"
 	"render-box/shared"
@@ -13,6 +14,7 @@ func InitTaskRouter() *shared.MessageRouter {
 	router.Register(string(shared.MSGTasksCreate), CreateTask)
 	router.Register(string(shared.MSGTasksAll), AllTasks)
 	router.Register(string(shared.MSGTasksNext), NextTask)
+	router.Register(string(shared.MSGTasksComplete), CompleteTask)
 
 	return router
 }
@@ -50,22 +52,46 @@ func NextTask(
 	message *shared.Message,
 	state *shared.ConnState,
 ) (interface{}, error) {
-	task, err := service.GetNextTask(db)
+	workerState := "working"
+	var workerTaskId *int64
+
+	task, terr := service.GetNextTask(db)
+	if terr != nil {
+		log.Println("No waiting tasks...")
+		workerState = "waiting"
+	} else {
+		workerTaskId = &task.ID
+	}
+
+	_, err := service.UpdateWorkerState(db, workerState, state.Worker.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = service.UpdateWorkerState(db, "working", state.Worker.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	worker, err := service.UpdateWorkerTask(db, state.Worker.ID, task.ID)
+	worker, err := service.UpdateWorkerTask(db, state.Worker.ID, workerTaskId)
 	if err != nil {
 		return nil, err
 	}
 
 	state.Worker = worker
 	state.Task = task
-	return task, err
+
+	if terr != nil {
+		return nil, terr
+	}
+
+	return task, nil
+}
+
+func CompleteTask(
+	db *sql.DB,
+	message *shared.Message,
+	state *shared.ConnState,
+) (interface{}, error) {
+	task, err := service.UpdateTaskState(db, "completed", state.Task.ID)
+	if err != nil {
+		return nil, err
+	}
+	state.Task = task
+	return task, nil
 }

@@ -25,6 +25,7 @@ func (self *Server) Run() {
 	if err != nil {
 		log.Fatalf("ERROR: Could not listen to port %s: %s\n", self.Addr, err)
 	}
+	defer l.Close()
 	self.Listener = &l
 	log.Printf("TCP Server running on %s\n", self.Addr)
 
@@ -34,8 +35,8 @@ func (self *Server) Run() {
 			log.Printf("ERROR: Could not accept connection: %s\n", err)
 			continue
 		}
-		log.Printf("New connection with %s\n", conn.RemoteAddr().String())
 
+		log.Printf("New connection with %s\n", conn.RemoteAddr().String())
 		go self.handleConnection(&conn)
 	}
 }

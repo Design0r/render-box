@@ -5,12 +5,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"render-box/shared"
 	"render-box/shared/db/repo"
 )
-
-type Task struct {
-	Name string
-}
 
 type PageData struct {
 	Tasks   []repo.Task
@@ -19,7 +16,16 @@ type PageData struct {
 }
 
 func HandleIndex(c echo.Context) error {
-	ctx := PageData{Tasks: nil, Jobs: nil, Workers: nil}
+	listener := shared.NewTcpListener("8000")
+	conn, err := listener.Run()
+	defer (*conn).Close()
+	if err != nil {
+		return err
+	}
+	ctx, err := fetchPageData(conn, int64(0))
+	if err != nil {
+		return err
+	}
 	c.Render(http.StatusOK, "index.html", ctx)
 
 	return nil
