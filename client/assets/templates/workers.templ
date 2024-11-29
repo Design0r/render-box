@@ -1,0 +1,55 @@
+package templates
+
+import (
+	"render-box/shared/db/repo"
+	"strconv"
+)
+
+templ Workers(workers []repo.Worker) {
+	<div
+		hx-swap-oob="true"
+		id="workers"
+		class="container shadow-xl rounded-2xl p-3 m-auto"
+	>
+		<div class="justify-center overflow-x-auto">
+			<table class="table table-zebra">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Name</th>
+						<th>State</th>
+						<th>Task ID</th>
+						<th>Created At</th>
+						<th>Edited At</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, worker := range workers {
+						<tr
+							if worker.State ==  "working" {
+								class="hover text-green-500"
+							}
+							else
+							if worker.State == "waiting" {
+								class="hover text-white"
+							} else {
+								class="hover"
+							}
+						>
+							<th>{ strconv.FormatInt(worker.ID, 10) }</th>
+							<td>{ worker.Name }</td>
+							<td>{ worker.State }</td>
+							if worker.TaskID == nil {
+								<td>none</td>
+							} else {
+								<td>{ strconv.FormatInt(*worker.TaskID, 10) }</td>
+							}
+							<td>{ worker.CreatedAt.String() }</td>
+							<td>{ worker.EditedAt.String() }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}

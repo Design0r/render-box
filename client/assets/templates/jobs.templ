@@ -1,0 +1,55 @@
+package templates
+
+import (
+	"fmt"
+	"render-box/shared/db/repo"
+	"strconv"
+)
+
+templ Jobs(jobs []repo.Job) {
+	<div
+		hx-swap-oob="true"
+		id="jobs"
+		class="container shadow-xl rounded-2xl p-3 m-auto"
+	>
+		<div class="justify-center overflow-x-auto">
+			<table class="table table-zebra">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Priority</th>
+						<th>State</th>
+						<th>Created At</th>
+						<th>Edited At</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, job := range jobs {
+						{{ j_id := strconv.FormatInt(job.ID, 10) }}
+						{{ action := fmt.Sprintf("{\"job_id\":\"%v\"}", j_id) }}
+						<tr
+							ws-send
+							hx-trigger="click"
+							hx-vals={ action }
+							if job.State == "progress" {
+								class="hover text-green-500"
+							}
+							else
+							if job.State == "completed" {
+								class="hover text-blue-500"
+							} else {
+								class="hover"
+							}
+						>
+							<th>{ j_id }</th>
+							<td>{ strconv.FormatInt(job.Priority, 10) }</td>
+							<td>{ job.State }</td>
+							<td>{ job.CreatedAt.String() }</td>
+							<td>{ job.EditedAt.String() }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}

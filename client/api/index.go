@@ -1,19 +1,13 @@
 package api
 
 import (
-	"net/http"
+	"context"
 
 	"github.com/labstack/echo/v4"
 
+	"render-box/client/assets/templates"
 	"render-box/shared"
-	"render-box/shared/db/repo"
 )
-
-type PageData struct {
-	Tasks   []repo.Task
-	Jobs    []repo.Job
-	Workers []repo.Worker
-}
 
 func HandleIndex(c echo.Context) error {
 	listener := shared.NewTcpListener("8000")
@@ -22,11 +16,12 @@ func HandleIndex(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx, err := fetchPageData(conn, int64(0))
+	ctx, err := fetchPageData(conn, int64(1))
 	if err != nil {
 		return err
 	}
-	c.Render(http.StatusOK, "index.html", ctx)
+
+	templates.Index(ctx).Render(context.Background(), c.Response().Writer)
 
 	return nil
 }

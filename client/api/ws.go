@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log"
 	"net"
@@ -11,6 +12,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
+	"render-box/client/assets/templates"
+	"render-box/client/schemas"
 	"render-box/shared"
 	"render-box/shared/db/repo"
 )
@@ -44,7 +47,7 @@ func HandleClientActions(done chan struct{}, jobChan chan int64, ws *websocket.C
 	}
 }
 
-func fetchPageData(conn *net.Conn, jobId int64) (*PageData, error) {
+func fetchPageData(conn *net.Conn, jobId int64) (*schemas.PageData, error) {
 	taskMsg := shared.Message{Type: shared.MSGTasksAll, Data: nil}
 	taskMsg.Send(conn)
 	response, err := shared.RecvMessage[[]repo.Task](conn)
@@ -80,17 +83,17 @@ func fetchPageData(conn *net.Conn, jobId int64) (*PageData, error) {
 		activeTasks = append(activeTasks, t)
 	}
 
-	return &PageData{Tasks: activeTasks, Jobs: jobs, Workers: worker}, nil
+	return &schemas.PageData{Tasks: activeTasks, Jobs: jobs, Workers: worker}, nil
 }
 
-func updatePage(c echo.Context, ws *websocket.Conn, conn *net.Conn, currentJobId int64) error {
+func updatePage(ws *websocket.Conn, conn *net.Conn, currentJobId int64) error {
 	var buf bytes.Buffer
 	ctx, err := fetchPageData(conn, currentJobId)
 	if err != nil {
 		return err
 	}
 
-	err = c.Echo().Renderer.Render(&buf, "update", ctx, c)
+	err = templates.Update(ctx).Render(context.Background(), &buf)
 	if err != nil {
 		return err
 	}
@@ -129,12 +132,12 @@ func WsHandler(c echo.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			updatePage(c, ws, conn, currentJobId)
+			updatePage(ws, conn, currentJobId)
 		case <-done:
 			return nil
 		case id := <-jobChan:
 			currentJobId = id
-			updatePage(c, ws, conn, currentJobId)
+			updatePage(ws, conn, currentJobId)
 		}
 	}
 }

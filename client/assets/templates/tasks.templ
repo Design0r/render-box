@@ -1,0 +1,51 @@
+package templates
+
+import (
+	"render-box/shared/db/repo"
+	"strconv"
+)
+
+templ Tasks(tasks []repo.Task) {
+	<div
+		hx-swap-oob="true"
+		id="tasks"
+		class="container shadow-xl rounded-2xl p-3 m-auto"
+	>
+		<div class="justify-center overflow-x-auto">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Priority</th>
+						<th>State</th>
+						<th>Created At</th>
+						<th>Edited At</th>
+						<th>Job ID</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, task := range tasks {
+						<tr
+							if task.State == "progress" {
+								class="hover text-green-500"
+							}
+							else
+							if  task.State == "completed" {
+								class="hover text-blue-500"
+							} else {
+								class="hover"
+							}
+						>
+							<th>{ strconv.FormatInt(task.ID, 10) }</th>
+							<td>{ strconv.FormatInt(task.Priority, 10) }</td>
+							<td>{ task.State }</td>
+							<td>{ task.CreatedAt.String() }</td>
+							<td>{ task.EditedAt.String() }</td>
+							<td>{ strconv.FormatInt(task.JobID, 10) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}

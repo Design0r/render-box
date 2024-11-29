@@ -1,0 +1,48 @@
+package templates
+
+import "render-box/client/schemas"
+
+templ Index(data *schemas.PageData) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<link
+				href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css"
+				rel="stylesheet"
+				type="text/css"
+			/>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
+			<script src="https://unpkg.com/htmx-ext-ws@2.0.1/ws.js"></script>
+			<title>Render Box Monitor</title>
+		</head>
+		<body class="space-y-5">
+			@Header()
+			<div hx-ext="ws" ws-connect="/ws" class="bg-base-100">
+				<div class="p-5 grid grid-cols-2">
+					<div>
+						<h1 class="text-lg text-center">Jobs</h1>
+						@Jobs((*data).Jobs)
+					</div>
+					<div>
+						<h1 class="text-lg text-center">Tasks</h1>
+						@Tasks((*data).Tasks)
+					</div>
+				</div>
+				<div>
+					<h1 class="text-lg text-center">Workers</h1>
+					@Workers((*data).Workers)
+				</div>
+			</div>
+		</body>
+	</html>
+}
+
+templ Update(data *schemas.PageData) {
+	@Jobs((*data).Jobs)
+	@Tasks((*data).Tasks)
+	@Workers((*data).Workers)
+}
