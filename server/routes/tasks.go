@@ -23,7 +23,7 @@ func CreateTask(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	data, err := shared.UnmarshallBody[repo.CreateTaskParams](message.Data)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func AllTasks(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	tasks, err := service.GetTasks(db)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func NextTask(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	workerState := "working"
 	var workerTaskId *int64
 
@@ -91,7 +91,7 @@ func CompleteTask(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	task, err := service.UpdateTaskState(db, "completed", state.Task.ID)
 	if err != nil {
 		return nil, err

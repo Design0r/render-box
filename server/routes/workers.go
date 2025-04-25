@@ -21,7 +21,7 @@ func CreateWorker(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	data, err := shared.UnmarshallBody[repo.CreateWorkerParams](message.Data)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func AllWorkers(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	worker, err := service.GetWorkers(db)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func RegisterWorker(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	name := (message.Data).(string)
 	worker, err := service.RegisterWorker(db, name)
 	if err != nil {

@@ -98,7 +98,7 @@ func ReadBody(conn *net.Conn, bodySize uint32) (*Message, error) {
 	return &msg, nil
 }
 
-func UnmarshallBody[T any](body interface{}) (*T, error) {
+func UnmarshallBody[T any](body any) (*T, error) {
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func RecvMessage[T any](conn *net.Conn) (*Message, error) {
 }
 
 type (
-	MessageHandler = func(db *sql.DB, message *Message, state *ConnState) (interface{}, error)
+	MessageHandler = func(db *sql.DB, message *Message, state *ConnState) (any, error)
 	MessageRouter  struct {
 		Routes map[string]MessageHandler
 	}
@@ -166,7 +166,7 @@ func (self *MessageRouter) Handle(
 	db *sql.DB,
 	message *Message,
 	state *ConnState,
-) (interface{}, error) {
+) (any, error) {
 	handler, exists := self.Routes[string(message.Type)]
 	if !exists {
 		return nil, fmt.Errorf("Failed to add route: %v, route already exists", message.Type)

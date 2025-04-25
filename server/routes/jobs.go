@@ -20,7 +20,7 @@ func CreateJob(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	data, err := shared.UnmarshallBody[repo.CreateJobParams](message.Data)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func AllJobs(
 	db *sql.DB,
 	message *shared.Message,
 	state *shared.ConnState,
-) (interface{}, error) {
+) (any, error) {
 	tasks, err := service.GetJobs(db)
 	if err != nil {
 		return nil, err
